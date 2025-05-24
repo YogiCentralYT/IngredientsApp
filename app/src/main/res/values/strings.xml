@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">IngredientsApp</string>
     <string name="search_for_food">Search for food...</string>
+    <string name="element_text">Element Text</string>
 </resources>
