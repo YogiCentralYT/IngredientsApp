@@ -1,0 +1,20 @@
+package com.example.ingredientsapp;
+
+import retrofit2.Call;
+import retrofit2.http.GET;
+import retrofit2.http.Path;
+import retrofit2.http.Query;
+
+public interface OpenFoodFactsInterface {
+    @GET("cgi/search.pl?json=1")
+    Call<ResponseProduct> getSearchProduct(
+            @Query("search_terms") String searchTerms,
+            @Query("page") int page,
+            @Query("page_size") int pageSize
+    );
+
+    @GET("api/v0/product/{code}.json")
+    Call<ResponseProduct> getProductDetails(
+            @Path("code") String code
+    );
+}
