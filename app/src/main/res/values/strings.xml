@@ -2,4 +2,9 @@
     <string name="app_name">IngredientsApp</string>
     <string name="search_for_food">Search for food...</string>
     <string name="element_text">Element Text</string>
+    <string name="password">Password</string>
+    <string name="email">Email</string>
+    <string name="nav_open">Open</string>
+    <string name="nav_close">Close</string>
+    <string name="grocery_list">Grocery list</string>
 </resources>

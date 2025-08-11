@@ -1,16 +1,22 @@
-package com.example.ingredientsapp;
+package com.example.ingredientsapp.ui;
 
 import android.os.Bundle;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
+import com.example.ingredientsapp.R;
+import com.example.ingredientsapp.data.remote.Product;
+import com.example.ingredientsapp.data.remote.ResponseProduct;
+import com.example.ingredientsapp.network.RetrofitInstance;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
 
 
 public class FoodInfoActivity extends AppCompatActivity {
@@ -24,13 +30,23 @@ public class FoodInfoActivity extends AppCompatActivity {
         String imageURL = getIntent().getStringExtra("image_url");
         String code = getIntent().getStringExtra("code");
 
+        TextView productNameTextView = findViewById(R.id.productName);
+        TextView brandsTextView = findViewById(R.id.brands);
+        ImageView imageView = findViewById(R.id.imageView);
+        TextView ingredientsTextView = findViewById(R.id.ingredients);
+
+        productNameTextView.setText(name);
+        brandsTextView.setText(brand);
+        Glide.with(this).load(imageURL).into(imageView);
+
         RetrofitInstance.getApiInterface().getProductDetails(code).enqueue(new Callback<ResponseProduct>() {
 
             @Override
             public void onResponse(Call<ResponseProduct> call, Response<ResponseProduct> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    ResponseProduct.Product product = response.body().getProduct();
+                    Product product = response.body().getProduct();
                     String ingredientsText = product.getIngredientsText();
+                    ingredientsTextView.setText(ingredientsText);
                 }
             }
 

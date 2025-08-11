@@ -1,4 +1,4 @@
-package com.example.ingredientsapp;
+package com.example.ingredientsapp.network;
 
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
