@@ -12,10 +12,10 @@ import java.util.List;
 public interface HistoryDAO {
 
     @Insert
-    void insert(HistoryEntity item);
+    void insert(AppDatabase.HistoryEntity item);
 
     @Delete
-    void delete(HistoryEntity item);
+    void delete(AppDatabase.HistoryEntity item);
 
     @Query("DELETE FROM history_items")
     void deleteAll();
@@ -24,8 +24,8 @@ public interface HistoryDAO {
     void deleteByCode(String code);
 
     @Query("SELECT * FROM history_items ORDER BY timestamp DESC")
-    LiveData<List<HistoryEntity>> getAllProducts();
+    LiveData<List<AppDatabase.HistoryEntity>> getAllProducts();
 
     @Query("SELECT * FROM history_items WHERE code = :code LIMIT 1")
-    HistoryEntity getProductByCode(String code);
+    AppDatabase.HistoryEntity getProductByCode(String code);
 }
