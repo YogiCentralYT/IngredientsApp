@@ -13,9 +13,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.IngredientsApp"
+        android:enableOnBackInvokedCallback="true"
         tools:targetApi="31">
         <activity
-            android:name=".ui.MainActivity"
+            android:name=".ui.activity.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -24,10 +25,11 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".ui.FoodInfoActivity" />
+        <activity android:name=".ui.activity.FoodInfoActivity" />
         <activity android:name=".ui.auth.SignUpActivity" />
         <activity android:name=".ui.auth.SignInActivity" />
         <activity android:name=".ui.auth.ForgotPasswordActivity" />
+        <activity android:name=".ui.activity.ListItemsActivity" />
 
         <meta-data
             android:name="preloaded_fonts"

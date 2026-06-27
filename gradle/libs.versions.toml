@@ -3,6 +3,7 @@ agp = "8.5.0"
 barcodeScanning = "17.3.0"
 barcodeScanningVersion = "17.2.0"
 composeBom = "2025.06.01"
+firebaseBom = "34.2.0"
 firebaseFirestore = "25.1.4"
 glide = "4.10.0"
 googleBarcodeScanning = "17.1.0"
@@ -32,6 +33,7 @@ barcode-scanning-v1710 = { module = "com.google.mlkit:barcode-scanning", version
 barcode-scanning-v1720 = { module = "com.google.mlkit:barcode-scanning", version.ref = "barcodeScanningVersion" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore", version.ref = "firebaseFirestore" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 google-play-services-code-scanner = { module = "com.google.android.gms:play-services-code-scanner", version.ref = "googlePlayServicesCodeScanner" }

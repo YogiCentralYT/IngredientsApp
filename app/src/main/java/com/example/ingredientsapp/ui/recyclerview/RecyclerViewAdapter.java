@@ -1,7 +1,6 @@
 package com.example.ingredientsapp.ui.recyclerview;
 
 import android.content.Context;
-import android.text.Layout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,16 +17,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.ingredientsapp.R;
-import com.example.ingredientsapp.data.local.AppDatabase;
-import com.example.ingredientsapp.data.local.HistoryDAO;
-import com.example.ingredientsapp.data.local.HistoryEntity;
-import com.example.ingredientsapp.ui.MainActivity;
-import com.example.ingredientsapp.ui.fragments.HistoryFragment;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.auth.User;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,16 +29,26 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     private final List<Item> itemList;
     private final List<Item> fullList;
     private final LayoutInflater layoutInflater;
-    private final ItemClickListener itemClickListener;
     private final int layout;
+    private final Mode mode;
+    private final String listId;
+    private final ItemClickListener itemClickListener;
 
-    public RecyclerViewAdapter(Context context, List<Item> itemList, int layout, ItemClickListener itemClickListener) {
+    public RecyclerViewAdapter(Context context, List<Item> itemList, int layout, Mode mode, String listId, ItemClickListener itemClickListener) {
         this.itemList = itemList;
         this.fullList = new ArrayList<>(itemList);
         this.layoutInflater = LayoutInflater.from(context);
         this.layout = layout;
+        this.mode = mode;
+        this.listId = listId;
         this.itemClickListener = itemClickListener;
     }
+
+    public enum Mode {
+        HISTORY,
+        LIST_ITEMS
+    }
+
 
     public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         TextView name;
@@ -93,7 +96,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         holder.name.setText(currentItem.getName());
         holder.brand.setText(currentItem.getBrand());
         Glide.with(holder.itemView.getContext()).load(currentItem.getimgURL()).into(holder.image);
-        if (layout == R.layout.item_history_layout) {
+        if (layout == R.layout.item_list_item_layout) {
             holder.moreButton.setOnClickListener(view -> {
                 showBottomSheet(holder.itemView.getContext(), holder.getAdapterPosition());
             });
@@ -104,34 +107,61 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(context);
         View bottomSheetView = layoutInflater.inflate(R.layout.bottom_dialog_layout, null);
 
+        TextView deleteText = bottomSheetView.findViewById(R.id.deleteText);
         LinearLayout removeItem = bottomSheetView.findViewById(R.id.removeItem);
-        removeItem.setOnClickListener(view -> {
-            Item item = itemList.get(position);
 
-            FirebaseAuth auth = FirebaseAuth.getInstance();
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            FirebaseUser user = auth.getCurrentUser();
-            if (user != null) {
-                db.collection("users")
-                        .document(user.getUid())
-                        .collection("history")
-                        .document(item.getCode())
-                        .delete();
-            }
+        switch (mode) {
+            case HISTORY:
+                deleteText.setText("Remove Item From History");
 
-            AppDatabase ldb = AppDatabase.getInstance(context);
-            HistoryDAO historyDAO = ldb.historyDAO();
-            new Thread(() -> {
-                historyDAO.deleteByCode(item.getCode());
-            }).start();
+                removeItem.setOnClickListener(view -> {
+                    Item item = itemList.get(position);
 
-            itemList.clear();
-            notifyDataSetChanged();
+                    FirebaseAuth auth = FirebaseAuth.getInstance();
+                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+                    FirebaseUser user = auth.getCurrentUser();
+                    if (user != null) {
+                        db.collection("users")
+                                .document(user.getUid())
+                                .collection("history")
+                                .document(item.getCode())
+                                .delete();
+                    }
 
-            Toast.makeText(context, "Item removed", Toast.LENGTH_SHORT).show();
-            bottomSheetDialog.dismiss();
-        });
+                    itemList.remove(position);
+                    notifyDataSetChanged();
 
+                    Toast.makeText(context, "Item removed", Toast.LENGTH_SHORT).show();
+                    bottomSheetDialog.dismiss();
+                });
+                break;
+            case LIST_ITEMS:
+                deleteText.setText("Remove Item From List");
+
+                removeItem.setOnClickListener(view -> {
+                    Item item = itemList.get(position);
+
+                    FirebaseAuth auth = FirebaseAuth.getInstance();
+                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+                    FirebaseUser user = auth.getCurrentUser();
+                    if (user != null) {
+                        db.collection("users")
+                                .document(user.getUid())
+                                .collection("lists")
+                                .document(listId)
+                                .collection("items")
+                                .document(item.getCode())
+                                .delete();
+                    }
+
+                    itemList.remove(position);
+                    notifyDataSetChanged();
+
+                    Toast.makeText(context, "Item removed", Toast.LENGTH_SHORT).show();
+                    bottomSheetDialog.dismiss();
+                });
+                break;
+        }
         bottomSheetDialog.setContentView(bottomSheetView);
         bottomSheetDialog.show();
     }

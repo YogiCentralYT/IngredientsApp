@@ -5,43 +5,280 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="196dp"
-        android:layout_height="155dp"
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:srcCompat="@tools:sample/backgrounds/scenic" />
+        app:layout_constraintVertical_bias="0.0">
 
-    <TextView
-        android:id="@+id/productName"
-        android:layout_width="142dp"
-        android:layout_height="19dp"
-        android:layout_marginTop="20dp"
-        android:text="TextView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.505"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView" />
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.497"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:srcCompat="@tools:sample/backgrounds/scenic" />
 
-    <TextView
-        android:id="@+id/brands"
-        android:layout_width="140dp"
-        android:layout_height="18dp"
-        android:layout_marginTop="8dp"
-        android:text="TextView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.501"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/productName" />
+        <TextView
+            android:id="@+id/productName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Item Name"
+            android:textSize="22dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.505"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/imageView" />
 
-    <TextView
-        android:id="@+id/ingredients"
-        android:layout_width="301dp"
-        android:layout_height="409dp"
-        android:text="TextView"
+        <TextView
+            android:id="@+id/brands"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Brand Name"
+            android:textSize="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.501"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/productName" />
+
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/ingredientsCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <!-- INGREDIENTS TITLE -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Ingredients"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:gravity="center" />
+
+                <TextView
+                    android:id="@+id/ingredientsText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Ingredients..."
+                    android:layout_marginTop="8dp" />
+
+                <!-- ALLERGENS SECTION -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Allergens:"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/allergensText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="None"
+                        android:layout_marginStart="8dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp">
+
+            <TableLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="8dp"
+                android:orientation="vertical"
+                android:layout_marginHorizontal="16dp"
+                android:stretchColumns="1">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Nutrition Facts"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:gravity="center" />
+
+                <TableRow>
+                    <TextView
+                        android:text="Serving Size"
+                        android:textStyle="bold" />
+
+                    <TextView />
+
+                    <TextView
+                        android:id="@+id/servingSizeText"
+                        android:gravity="end" />
+                </TableRow>
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:background="@color/black"
+                    android:layout_marginVertical="4dp" />
+                <TableRow>
+                    <TextView
+                        android:text="Nutrient"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:text="Per serving"
+                        android:gravity="center"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:text="Per 100g"
+                        android:gravity="end"
+                        android:textStyle="bold" />
+                </TableRow>
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="3dp"
+                    android:background="@color/black"
+                    android:layout_marginVertical="4dp" />
+
+                <TableRow>
+
+                    <TextView
+                        android:text="Calories" />
+
+                    <TextView
+                        android:id="@+id/caloriesServingText"
+                        android:layout_width="104dp"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:id="@+id/caloriesText"
+                        android:gravity="end" />
+                </TableRow>
+
+                <TableRow>
+
+                    <TextView
+                        android:text="Fat" />
+
+                    <TextView
+                        android:id="@+id/fatServingText"
+                        android:layout_width="118dp"
+                        android:layout_height="match_parent"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:id="@+id/fatText"
+                        android:gravity="end" />
+                </TableRow>
+
+                <TableRow>
+
+                    <TextView
+                        android:text="Saturated Fat" />
+
+                    <TextView
+                        android:id="@+id/saturatedFatServingText"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:id="@+id/saturatedFatText"
+                        android:gravity="end" />
+                </TableRow>
+
+                <TableRow>
+
+                    <TextView
+                        android:text="Carbohydrates" />
+
+                    <TextView
+                        android:id="@+id/carbohydratesServingText"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:id="@+id/carbohydratesText"
+                        android:gravity="end" />
+                </TableRow>
+
+                <TableRow>
+
+                    <TextView
+                        android:text="Sugars"/>
+
+                    <TextView
+                        android:id="@+id/sugarsServingText"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:id="@+id/sugarsText"
+                        android:gravity="end" />
+                </TableRow>
+
+                <TableRow>
+
+                    <TextView
+                        android:text="Protein" />
+
+                    <TextView
+                        android:id="@+id/proteinsServingText"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:id="@+id/proteinsText"
+                        android:gravity="end" />
+                </TableRow>
+
+                <TableRow>
+
+                    <TextView
+                        android:text="Salt"/>
+
+                    <TextView
+                        android:id="@+id/saltServingText"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:id="@+id/saltText"
+                        android:gravity="end" />
+                </TableRow>
+
+            </TableLayout>
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/addToListButton"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/circle_button"
+        android:src="@drawable/baseline_format_list_bulleted_add_24"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.9"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/brands" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.95" />
 </androidx.constraintlayout.widget.ConstraintLayout>

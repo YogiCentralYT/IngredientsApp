@@ -13,8 +13,8 @@ import android.widget.Button;
 import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.appcompat.widget.Toolbar;
 
+import androidx.appcompat.widget.Toolbar;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,16 +24,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.ingredientsapp.R;
-import com.example.ingredientsapp.data.local.AppDatabase;
-import com.example.ingredientsapp.data.local.HistoryDAO;
-import com.example.ingredientsapp.data.local.HistoryEntity;
 import com.example.ingredientsapp.data.remote.Product;
-import com.example.ingredientsapp.ui.FoodInfoActivity;
+import com.example.ingredientsapp.ui.activity.FoodInfoActivity;
 import com.example.ingredientsapp.ui.recyclerview.Item;
 import com.example.ingredientsapp.ui.recyclerview.RecyclerViewAdapter;
 import com.example.ingredientsapp.data.remote.ResponseProduct;
 import com.example.ingredientsapp.network.RetrofitInstance;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
@@ -66,12 +66,8 @@ public class HomeFragment extends Fragment {
 
     Context context;
 
-    FirebaseAuth auth = FirebaseAuth.getInstance();
-    FirebaseUser user = auth.getCurrentUser();
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-    AppDatabase ldb;
-    HistoryDAO historyDAO;
+    FirebaseAuth auth;
+    FirebaseFirestore db;
 
     @Nullable
     @Override
@@ -79,9 +75,6 @@ public class HomeFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         context = requireContext();
-
-        ldb = AppDatabase.getInstance(context);
-        historyDAO = ldb.historyDAO();
 
         Toolbar toolbar = getActivity().findViewById(R.id.toolbar);
         toolbar.setTitle("Home");
@@ -94,8 +87,6 @@ public class HomeFragment extends Fragment {
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                ConstraintLayout searchLayout = view.findViewById(R.id.searchLayout);
-                ConstraintLayout homeLayout = view.findViewById(R.id.homeLayout);
                 if (searchLayout.getVisibility() == View.VISIBLE) {
                     searchLayout.setVisibility(View.GONE);
                     homeLayout.setVisibility(View.VISIBLE);
@@ -120,66 +111,29 @@ public class HomeFragment extends Fragment {
             imm.showSoftInput(searchView, InputMethodManager.SHOW_IMPLICIT);
         });
 
-        if (user != null) {
-            historyDAO.getAllProducts().observe(getViewLifecycleOwner(), historyList -> {
-                for (HistoryEntity item : historyList) {
-                    HashMap<String, Object> itemMap = new HashMap<>();
-                    itemMap.put("name", item.name);
-                    itemMap.put("brand", item.brand);
-                    itemMap.put("imgURL", item.imgURL);
-                    itemMap.put("code", item.code);
-                    itemMap.put("timestamp", FieldValue.serverTimestamp());
+        auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
-                    db.collection("users")
-                            .document(user.getUid())
-                            .collection("history")
-                            .document(item.code)
-                            .set(itemMap, SetOptions.merge());
+        if (auth.getCurrentUser() == null) {
+            auth.signInAnonymously().addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                @Override
+                public void onComplete(@NonNull Task<AuthResult> task) {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(context, "Signed-in anonymously", Toast.LENGTH_SHORT).show();
+                    }
                 }
-                new Thread(() -> {
-                    historyDAO.deleteAll();
-                }).start();
             });
         }
 
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
         LinearLayoutManager layoutManager = new LinearLayoutManager(context);
         recyclerView.setLayoutManager(layoutManager);
-        adapter = new RecyclerViewAdapter(context, itemList, R.layout.item_search_layout, new RecyclerViewAdapter.ItemClickListener() {
+        adapter = new RecyclerViewAdapter(context, itemList, R.layout.item_search_layout, null, null, new RecyclerViewAdapter.ItemClickListener() {
             @Override
             public void OnItemClick(View view, int position) {
                 Item clickedItem = adapter.getItem(position);
-
-                if (user != null) {
-                    HashMap<String, Object> itemMap = new HashMap<>();
-                    itemMap.put("name", clickedItem.getName());
-                    itemMap.put("brand", clickedItem.getBrand());
-                    itemMap.put("imgURL",clickedItem.getimgURL());
-                    itemMap.put("code", clickedItem.getCode());
-                    itemMap.put("timestamp", FieldValue.serverTimestamp());
-
-                    db.collection("users")
-                            .document(user.getUid())
-                            .collection("history")
-                            .document(clickedItem.getCode())
-                            .set(itemMap, SetOptions.merge());
-                } else {
-                    new Thread(() -> {
-                        historyDAO.insert(new HistoryEntity(
-                                clickedItem.getCode(),
-                                clickedItem.getName(),
-                                clickedItem.getBrand(),
-                                clickedItem.getimgURL(),
-                                String.valueOf(System.currentTimeMillis())));
-                    }).start();
-                }
-
-                Intent intent = new Intent(getActivity(), FoodInfoActivity.class);
-                intent.putExtra("product_name", clickedItem.getName());
-                intent.putExtra("brands", clickedItem.getBrand());
-                intent.putExtra("image_url", clickedItem.getimgURL());
-                intent.putExtra("code", clickedItem.getCode());
-                startActivity(intent);
+                addToHistory(clickedItem);
+                startIntent(clickedItem);
             }
         });
         recyclerView.setAdapter(adapter);
@@ -300,39 +254,17 @@ public class HomeFragment extends Fragment {
                 .addOnSuccessListener(
                         barcode -> {
                             String rawValue = barcode.getRawValue();
+
+                            if (rawValue == null || rawValue.isEmpty()){
+                                Toast.makeText(context, "Invalid barcode", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+
                             fetchItem(rawValue, new FetchItemCallback() {
                                 @Override
                                 public void OnItemFetch(Item scannedItem) {
-                                    if (user != null) {
-                                        HashMap<String, Object> itemMap = new HashMap<>();
-                                        itemMap.put("name", scannedItem.getName());
-                                        itemMap.put("brand", scannedItem.getBrand());
-                                        itemMap.put("imgURL",scannedItem.getimgURL());
-                                        itemMap.put("code", scannedItem.getCode());
-                                        itemMap.put("timestamp", FieldValue.serverTimestamp());
-
-                                        db.collection("users")
-                                                .document(user.getUid())
-                                                .collection("history")
-                                                .document(scannedItem.getCode())
-                                                .set(itemMap, SetOptions.merge());
-                                    } else {
-                                        new Thread(() -> {
-                                            historyDAO.insert(new HistoryEntity(
-                                                    scannedItem.getCode(),
-                                                    scannedItem.getName(),
-                                                    scannedItem.getBrand(),
-                                                    scannedItem.getimgURL(),
-                                                    String.valueOf(System.currentTimeMillis())));
-                                        }).start();
-                                    }
-
-                                    Intent intent = new Intent(getActivity(), FoodInfoActivity.class);
-                                    intent.putExtra("product_name", scannedItem.getName());
-                                    intent.putExtra("brands", scannedItem.getBrand());
-                                    intent.putExtra("image_url", scannedItem.getimgURL());
-                                    intent.putExtra("code", scannedItem.getCode());
-                                    startActivity(intent);
+                                    addToHistory(scannedItem);
+                                    startIntent(scannedItem);
                                 }
                             });
                         })
@@ -371,5 +303,30 @@ public class HomeFragment extends Fragment {
 
     public interface FetchItemCallback {
         void OnItemFetch(Item item);
+    }
+
+    public void addToHistory(Item item) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        HashMap<String, Object> itemMap = new HashMap<>();
+        itemMap.put("name", item.getName());
+        itemMap.put("brand", item.getBrand());
+        itemMap.put("imgURL", item.getimgURL());
+        itemMap.put("code", item.getCode());
+        itemMap.put("timestamp", FieldValue.serverTimestamp());
+
+        db.collection("users")
+                .document(currentUser.getUid())
+                .collection("history")
+                .document(item.getCode())
+                .set(itemMap, SetOptions.merge());
+    }
+
+    public void startIntent(Item item){
+        Intent intent = new Intent(getActivity(), FoodInfoActivity.class);
+        intent.putExtra("product_name", item.getName());
+        intent.putExtra("brands", item.getBrand());
+        intent.putExtra("image_url", item.getimgURL());
+        intent.putExtra("code", item.getCode());
+        startActivity(intent);
     }
 }

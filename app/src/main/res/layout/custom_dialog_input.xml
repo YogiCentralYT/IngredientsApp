@@ -10,13 +10,13 @@
         android:layout_height="wrap_content"
         android:id="@+id/listNameInputLayout"
         android:hint="List Name"
-        android:paddingHorizontal="20dp">
+        android:paddingHorizontal="10dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/listNameInput"
-            android:maxLength="25"/>
+            android:maxLength="30"/>
 
     </com.google.android.material.textfield.TextInputLayout>
 

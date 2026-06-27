@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.appcompat.widget.Toolbar;
 
@@ -17,29 +16,30 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.ingredientsapp.R;
-import com.example.ingredientsapp.data.local.AppDatabase;
-import com.example.ingredientsapp.data.local.HistoryDAO;
-import com.example.ingredientsapp.data.local.HistoryEntity;
-import com.example.ingredientsapp.ui.FoodInfoActivity;
+import com.example.ingredientsapp.ui.activity.FoodInfoActivity;
 import com.example.ingredientsapp.ui.recyclerview.Item;
 import com.example.ingredientsapp.ui.recyclerview.RecyclerViewAdapter;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.Timestamp;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
-
-import org.w3c.dom.Text;
+import com.google.firebase.firestore.Source;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class HistoryFragment extends Fragment {
-
+    RecyclerView recyclerView;
     RecyclerViewAdapter adapter;
+
+    FirebaseAuth auth;
+    FirebaseFirestore db;
 
     @Nullable
     @Override
@@ -50,55 +50,55 @@ public class HistoryFragment extends Fragment {
         Toolbar toolbar = requireActivity().findViewById(R.id.toolbar);
         toolbar.setTitle("History");
 
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-        FirebaseUser user = auth.getCurrentUser();
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
-        AppDatabase ldb = AppDatabase.getInstance(context);
-        HistoryDAO historyDAO = ldb.historyDAO();
-
-
-        RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
+        recyclerView = view.findViewById(R.id.recyclerView);
         LinearLayoutManager layoutManager = new LinearLayoutManager(context);
         recyclerView.setLayoutManager(layoutManager);
-        if (user != null) {
-            db.collection("users")
-                    .document(user.getUid())
-                    .collection("history")
-                    .orderBy("timestamp", Query.Direction.DESCENDING)
-                    .get()
-                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                        @Override
-                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                            List<Item> historyList = new ArrayList<>();
-                            for (DocumentSnapshot documentSnapshot : queryDocumentSnapshots.getDocuments()) {
-                                String name = documentSnapshot.getString("name");
-                                String brand = documentSnapshot.getString("brand");
-                                String imgURL = documentSnapshot.getString("imgURL");
-                                String code = documentSnapshot.getString("code");
-                                historyList.add(new Item(name, brand, imgURL, code));
-                            }
-
-                            adapter = getAdapter(context, historyList);
-                            recyclerView.setAdapter(adapter);
-                        }
-                    });
+        FirebaseUser currentUser = auth.getCurrentUser();
+        if (currentUser != null) {
+            loadHistory(currentUser);
         } else {
-            List<Item> itemHistoryList = new ArrayList<>();
-
-            historyDAO.getAllProducts().observe(getViewLifecycleOwner(), historyList -> {
-                for (HistoryEntity item : historyList) {
-                    itemHistoryList.add(new Item(item.name, item.brand, item.imgURL, item.code));
+            auth.signInAnonymously().addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                @Override
+                public void onComplete(@NonNull Task<AuthResult> task) {
+                    if (task.isSuccessful()) {
+                        FirebaseUser anonUser = auth.getCurrentUser();
+                        loadHistory(anonUser);
+                    }
                 }
-                adapter = getAdapter(context, itemHistoryList);
-                recyclerView.setAdapter(adapter);
             });
         }
+
         return view;
     }
 
+    public void loadHistory(FirebaseUser currentUser) {
+        db.collection("users")
+                .document(currentUser.getUid())
+                .collection("history")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .get(Source.CACHE)
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        List<Item> historyList = new ArrayList<>();
+                        for (DocumentSnapshot documentSnapshot : queryDocumentSnapshots.getDocuments()) {
+                            String name = documentSnapshot.getString("name");
+                            String brand = documentSnapshot.getString("brand");
+                            String imgURL = documentSnapshot.getString("imgURL");
+                            String code = documentSnapshot.getString("code");
+                            historyList.add(new Item(name, brand, imgURL, code));
+                        }
+                        adapter = getAdapter(requireContext(), historyList);
+                        recyclerView.setAdapter(adapter);
+                    }
+                });
+    }
+
     public RecyclerViewAdapter getAdapter(Context context, List<Item> historyList) {
-        return new RecyclerViewAdapter(context, historyList, R.layout.item_history_layout, new RecyclerViewAdapter.ItemClickListener() {
+        return new RecyclerViewAdapter(context, historyList, R.layout.item_list_item_layout, RecyclerViewAdapter.Mode.HISTORY, null, new RecyclerViewAdapter.ItemClickListener() {
             @Override
             public void OnItemClick(View view, int position) {
                 Item clickedItem = historyList.get(position);

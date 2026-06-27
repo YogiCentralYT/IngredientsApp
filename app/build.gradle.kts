@@ -43,6 +43,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.google.play.services.code.scanner)
+    implementation(libs.firebase.bom)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.material.v130alpha03)

@@ -13,11 +13,12 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.ingredientsapp.R;
-import com.example.ingredientsapp.ui.MainActivity;
+import com.example.ingredientsapp.ui.activity.MainActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class SignInActivity extends AppCompatActivity {
 
@@ -43,9 +44,12 @@ public class SignInActivity extends AppCompatActivity {
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
                             if (task.isSuccessful()) {
+                                FirebaseUser signedInUser = auth.getCurrentUser();
+                                mergeAnonHistory(signedInUser);
                                 Toast.makeText(SignInActivity.this, "Signed in successfully", Toast.LENGTH_SHORT).show();
                                 Intent intent = new Intent(SignInActivity.this, MainActivity.class);
                                 startActivity(intent);
+
                             } else {
                                 Toast.makeText(SignInActivity.this, "Sign in failed: " + task.getException(), Toast.LENGTH_SHORT).show();
                             }
@@ -64,5 +68,9 @@ public class SignInActivity extends AppCompatActivity {
             Intent intent = new Intent(SignInActivity.this, SignUpActivity.class);
             startActivity(intent);
         });
+    }
+
+    public void mergeAnonHistory(FirebaseUser signedInUser) {
+        //todo
     }
 }

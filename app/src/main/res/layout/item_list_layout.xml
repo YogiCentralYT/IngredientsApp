@@ -33,6 +33,29 @@
                     android:text="TextView"
                     android:textSize="20dp"
                     android:paddingHorizontal="10dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp"
+                    android:id="@+id/secondaryLayout">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:text="Items:"
+                        android:textSize="15dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:text="0"
+                        android:textSize="15dp"
+                        android:paddingHorizontal="1dp"
+                        android:id="@+id/itemCount"/>
+                </LinearLayout>
             </LinearLayout>
 
             <ImageButton
@@ -40,9 +63,15 @@
                 android:layout_height="wrap_content"
                 android:src="@drawable/baseline_more_vert_24"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:layout_gravity="top"
-                android:id="@+id/moreButton"
+                android:layout_gravity="center"
+                android:id="@+id/moreListButton"
                 />
+
+            <CheckBox
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:visibility="gone"
+                android:id="@+id/checkBoxButton"/>
         </LinearLayout>
 
 

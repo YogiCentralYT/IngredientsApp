@@ -1,4 +1,4 @@
-package com.example.ingredientsapp.ui;
+package com.example.ingredientsapp.ui.activity;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -7,6 +7,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -20,30 +21,27 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.example.ingredientsapp.R;
-import com.example.ingredientsapp.data.local.AppDatabase;
-import com.example.ingredientsapp.data.local.HistoryDAO;
 import com.example.ingredientsapp.ui.auth.SignInActivity;
 import com.example.ingredientsapp.ui.fragments.HistoryFragment;
 import com.example.ingredientsapp.ui.fragments.HomeFragment;
 import com.example.ingredientsapp.ui.fragments.ListsFragment;
-import com.example.ingredientsapp.ui.recyclerview.RecyclerViewAdapter;
-import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.PersistentCacheSettings;
+import com.google.firebase.firestore.Source;
 
 public class MainActivity extends AppCompatActivity {
 
-    FirebaseAuth auth = FirebaseAuth.getInstance();
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-    AppDatabase ldb;
-    HistoryDAO historyDAO;
-
-    RecyclerViewAdapter adapter;
+    FirebaseAuth auth;
+    FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,32 +55,29 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        ldb = AppDatabase.getInstance(this);
-        historyDAO = ldb.historyDAO();
-
         replaceFragment(new HomeFragment());
+
+        auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                .setLocalCacheSettings(
+                        PersistentCacheSettings
+                                .newBuilder()
+                                .build())
+                .build();
+        db.setFirestoreSettings(settings);
 
         NavigationView navigationView = findViewById(R.id.navigationView);
         Menu menu = navigationView.getMenu();
         MenuItem signIn = menu.findItem(R.id.signIn);
-
         MenuItem deleteAccount = menu.findItem(R.id.deleteAccount);
 
-        if (auth.getCurrentUser() != null) {
-            signIn.setTitle("Sign Out");
-            signIn.setIcon(R.drawable.baseline_logout_24);
-            deleteAccount.setTitle("Delete account");
-        } else {
-            signIn.setTitle("Sign In");
-            signIn.setIcon(R.drawable.baseline_login_24);
-
-            deleteAccount.setTitle("");
-        }
+        updateMenuItems(signIn, deleteAccount);
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
-
             if (itemId == R.id.home) {
                 replaceFragment(new HomeFragment());
                 return true;
@@ -99,67 +94,79 @@ public class MainActivity extends AppCompatActivity {
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
         Toolbar toolbar = findViewById(R.id.toolbar);
 
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.nav_open, R.string.nav_close);
-
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawerLayout, toolbar, R.string.nav_open, R.string.nav_close);
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
+
         navigationView.setNavigationItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.signIn) {
-                if (auth.getCurrentUser() != null) {
+                FirebaseUser currentUser = auth.getCurrentUser();
+                if (currentUser != null && !currentUser.isAnonymous()) {
                     auth.signOut();
                     Toast.makeText(this, "Signed out successfully", Toast.LENGTH_SHORT).show();
-                    signIn.setTitle("Sign In");
-                    signIn.setIcon(R.drawable.baseline_login_24);
-                    deleteAccount.setTitle("");
-                    return true;
+                    updateMenuItems(signIn, deleteAccount);
                 } else {
-                    Intent intent = new Intent(MainActivity.this, SignInActivity.class);
-                    startActivity(intent);
-                    return true;
+                    startActivity(new Intent(MainActivity.this, SignInActivity.class));
                 }
+                return true;
             } else if (itemId == R.id.clearHistory) {
-                if (auth.getCurrentUser() != null) {
-                    db.collection("users")
-                            .document(auth.getCurrentUser().getUid())
-                            .collection("history")
-                            .get()
-                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                                @Override
-                                public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                                        doc.getReference().delete();
-                                    }
-                                    if (getCurrentFragment() instanceof HistoryFragment) {
-                                        replaceFragment(new HistoryFragment());
-                                    }
-                                    Toast.makeText(MainActivity.this, "History cleared", Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                FirebaseUser currentUser = auth.getCurrentUser();
+                if (currentUser != null) {
+                    clearHistory(currentUser.getUid());
                 } else {
-
-                    new Thread(() -> {
-                        historyDAO.deleteAll();
-                    }).start();
-
-                    if (getCurrentFragment() instanceof HistoryFragment) {
-                        replaceFragment(new HistoryFragment());
-                    }
-                    Toast.makeText(MainActivity.this, "History cleared", Toast.LENGTH_SHORT).show();
+                    auth.signInAnonymously().addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if (task.isSuccessful()) {
+                                FirebaseUser newUser = auth.getCurrentUser();
+                                if (newUser != null) clearHistory(newUser.getUid());
+                            }
+                        }
+                    });
                 }
             } else if (itemId == R.id.deleteAccount) {
-                if (auth.getCurrentUser() != null) {
-                    auth.getCurrentUser().delete();
-                    signIn.setTitle("Sign In");
-                    signIn.setIcon(R.drawable.baseline_login_24);
-                    deleteAccount.setTitle("");
+                FirebaseUser currentUser = auth.getCurrentUser();
+                if (currentUser != null) {
+                    currentUser.delete();
+                    updateMenuItems(signIn, deleteAccount);
                     Toast.makeText(this, "Account deleted", Toast.LENGTH_SHORT).show();
                 }
             }
             drawerLayout.closeDrawers();
             return false;
         });
+    }
 
+    private void updateMenuItems(MenuItem signIn, MenuItem deleteAccount) {
+        FirebaseUser currentUser = auth.getCurrentUser();
+
+        if (currentUser != null && !currentUser.isAnonymous()) {
+            signIn.setTitle("Sign Out");
+            signIn.setIcon(R.drawable.baseline_logout_24);
+            deleteAccount.setTitle("Delete account");
+        } else {
+            signIn.setTitle("Sign In");
+            signIn.setIcon(R.drawable.baseline_login_24);
+            deleteAccount.setTitle("");
+        }
+    }
+
+    public void clearHistory(String userId) {
+        db.collection("users")
+                .document(userId)
+                .collection("history")
+                .get(Source.CACHE)
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        doc.getReference().delete();
+                    }
+                    if (getCurrentFragment() instanceof HistoryFragment) {
+                        replaceFragment(new HistoryFragment());
+                    }
+                    Toast.makeText(MainActivity.this, "History cleared", Toast.LENGTH_SHORT).show();
+                });
     }
 
     public void replaceFragment(Fragment fragment) {
